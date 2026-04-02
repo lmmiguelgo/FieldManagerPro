@@ -4,7 +4,11 @@
       "Bash(cd:*)",
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(ls -la tailwind.config.*)",
+      "Bash(ls -la *.config.ts *.config.js)",
+      "Bash(curl -s http://localhost:3000 -o /dev/null -w \"%{http_code}\")",
+      "Bash(ls:*)"
     ]
   }
 }

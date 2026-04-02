@@ -10,6 +10,14 @@ import {
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { type UserRole, type AuthUser } from "@/types/roles";
+import { IS_DEV_MODE } from "@/lib/dev-mode";
+
+const MOCK_USER: AuthUser = {
+  uid: "mock-admin-uid",
+  email: "admin@fieldmanager.dev",
+  displayName: "Dev Admin",
+  role: "global_admin",
+};
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -26,12 +34,14 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(IS_DEV_MODE ? MOCK_USER : null);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!IS_DEV_MODE);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (IS_DEV_MODE) return;
+
     const unsubscribe = onAuthStateChanged(
       auth,
       async (fbUser) => {

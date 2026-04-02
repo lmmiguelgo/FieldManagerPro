@@ -10,7 +10,17 @@ const PUBLIC_PATHS = ["/login", "/forgot-password"];
 const ADMIN_PATHS = ["/dispatch", "/parts", "/quickbooks"];
 const GLOBAL_ADMIN_PATHS = ["/admin"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
+  // Dev mode: Firebase not configured — bypass auth entirely
+  if (!process.env.FIREBASE_ADMIN_PRIVATE_KEY || !process.env.FIREBASE_ADMIN_CLIENT_EMAIL) {
+    const path = request.nextUrl.pathname;
+    // Redirect /login to / so the app loads directly
+    if (path === "/login" || path === "/forgot-password") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    return NextResponse.next();
+  }
+
   return authMiddleware(request, {
     loginPath: "/api/auth/login",
     logoutPath: "/api/auth/logout",
@@ -83,7 +93,7 @@ export async function middleware(request: NextRequest) {
       });
     },
     handleError: async (error) => {
-      console.error("Auth middleware error:", error);
+      console.error("Auth proxy error:", error);
       return redirectToLogin(request, {
         path: "/login",
         publicPaths: PUBLIC_PATHS,

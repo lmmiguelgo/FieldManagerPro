@@ -19,6 +19,8 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "./config";
+import { IS_DEV_MODE } from "@/lib/dev-mode";
+import { getMockCustomer, getMockTicket } from "@/lib/mock-data";
 
 // Typed collection reference
 export function typedCollection<T extends DocumentData>(path: string) {
@@ -38,6 +40,11 @@ export async function addDocument<T extends DocumentData>(
   collectionPath: string,
   data: WithFieldValue<T>
 ) {
+  if (IS_DEV_MODE) {
+    const mockId = `mock-${collectionPath}-${Date.now()}`;
+    console.info(`[Dev Mode] addDocument(${collectionPath})`, data);
+    return { id: mockId } as ReturnType<typeof addDoc> extends Promise<infer R> ? R : never;
+  }
   const ref = collection(db, collectionPath);
   return addDoc(ref, {
     ...data,
@@ -52,6 +59,10 @@ export async function updateDocument<T extends DocumentData>(
   docId: string,
   data: UpdateData<T>
 ) {
+  if (IS_DEV_MODE) {
+    console.info(`[Dev Mode] updateDocument(${collectionPath}/${docId})`, data);
+    return;
+  }
   const ref = doc(db, collectionPath, docId);
   return updateDoc(ref, {
     ...data,
@@ -61,6 +72,10 @@ export async function updateDocument<T extends DocumentData>(
 
 // Delete a document
 export async function deleteDocument(collectionPath: string, docId: string) {
+  if (IS_DEV_MODE) {
+    console.info(`[Dev Mode] deleteDocument(${collectionPath}/${docId})`);
+    return;
+  }
   const ref = doc(db, collectionPath, docId);
   return deleteDoc(ref);
 }
@@ -70,6 +85,11 @@ export async function getDocument<T extends DocumentData>(
   collectionPath: string,
   docId: string
 ) {
+  if (IS_DEV_MODE) {
+    if (collectionPath === "customers") return getMockCustomer(docId) as (T & { id: string }) | null;
+    if (collectionPath === "tickets") return getMockTicket(docId) as (T & { id: string }) | null;
+    return null;
+  }
   const ref = doc(db, collectionPath, docId);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
@@ -81,6 +101,10 @@ export async function queryDocuments<T extends DocumentData>(
   collectionPath: string,
   ...constraints: QueryConstraint[]
 ) {
+  if (IS_DEV_MODE) {
+    console.info(`[Dev Mode] queryDocuments(${collectionPath})`);
+    return [] as (T & { id: string })[];
+  }
   const ref = collection(db, collectionPath);
   const q = query(ref, ...constraints);
   const snap = await getDocs(q);
